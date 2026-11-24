@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/builder"
+	"github.com/zephyrus-framework/leaf-cli/internal/builder"
 )
 
 func runBuild(args []string) int {

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/builder"
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/devserver"
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/project"
+	"github.com/zephyrus-framework/leaf-cli/internal/builder"
+	"github.com/zephyrus-framework/leaf-cli/internal/devserver"
+	"github.com/zephyrus-framework/leaf-cli/internal/project"
 )
 
 func runDev(args []string) int {

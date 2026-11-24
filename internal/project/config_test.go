@@ -39,7 +39,7 @@ func TestLoad_Full(t *testing.T) {
   name: Zephyrus Leaf
   version: 1.0.0
   description: Static sites quietly crafted.
-  github_url: https://github.com/ophelios-studio/zephyrus-leaf
+  github_url: https://github.com/zephyrus-framework/leaf
   content_path: docs
   output_path: build
   base_url: /leaf

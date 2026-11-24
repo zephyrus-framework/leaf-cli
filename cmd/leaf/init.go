@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/overlay"
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/project"
+	"github.com/zephyrus-framework/leaf-cli/internal/overlay"
+	"github.com/zephyrus-framework/leaf-cli/internal/project"
 )
 
 // Paths that live inside the CLI binary at build time, not in a user's init

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/overlay"
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/project"
+	"github.com/zephyrus-framework/leaf-cli/internal/overlay"
+	"github.com/zephyrus-framework/leaf-cli/internal/project"
 )
 
 // Paths where the template only fills gaps and never replaces a user file.

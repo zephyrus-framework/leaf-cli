@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/overlay"
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/project"
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/runtime"
+	"github.com/zephyrus-framework/leaf-cli/internal/overlay"
+	"github.com/zephyrus-framework/leaf-cli/internal/project"
+	"github.com/zephyrus-framework/leaf-cli/internal/runtime"
 )
 
 type Options struct {

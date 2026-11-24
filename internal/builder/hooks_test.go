@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ophelios-studio/zephyrus-leaf-cli/internal/project"
+	"github.com/zephyrus-framework/leaf-cli/internal/project"
 )
 
 func TestRunPostBuildHooks_NonExecutableFileNamesTheInterpreterFix(t *testing.T) {

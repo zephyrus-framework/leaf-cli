@@ -1,4 +1,4 @@
-module github.com/ophelios-studio/zephyrus-leaf-cli
+module github.com/zephyrus-framework/leaf-cli
 
 go 1.22
 

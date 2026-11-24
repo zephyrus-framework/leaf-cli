@@ -10,7 +10,7 @@ One binary per platform. No PHP or Composer to install on your machine at instal
 curl -fsSL https://leaf.ophelios.com/install.sh | sh
 ```
 
-Detects your OS/arch, downloads the matching binary from [GitHub Releases](https://github.com/ophelios-studio/zephyrus-leaf-cli/releases/latest), verifies the checksum, installs to `/usr/local/bin/leaf`. Override with `LEAF_PREFIX` or `LEAF_VERSION`.
+Detects your OS/arch, downloads the matching binary from [GitHub Releases](https://github.com/zephyrus-framework/leaf-cli/releases/latest), verifies the checksum, installs to `/usr/local/bin/leaf`. Override with `LEAF_PREFIX` or `LEAF_VERSION`.
 
 Supported platforms: macOS (arm64, amd64), Linux (arm64, amd64), Windows (amd64).
 
@@ -73,7 +73,7 @@ For teams that want custom controllers, Composer packages, or full ownership of 
 composer create-project zephyrus-framework/leaf my-docs
 ```
 
-Same [`zephyrus-leaf-core`](https://github.com/ophelios-studio/zephyrus-leaf-core) under the hood.
+Same [`zephyrus-leaf-core`](https://github.com/zephyrus-framework/leaf-core) under the hood.
 
 Already started on the binary and want to switch? `leaf eject` converts the project (one-way).
 

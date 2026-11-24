@@ -4,7 +4,7 @@
 
 - Go 1.22+
 - PHP 8.4+ with `ext-intl`, `ext-mbstring` (only for integration tests and running `leaf build` in dev mode)
-- A local checkout of [`zephyrus-leaf`](https://github.com/ophelios-studio/zephyrus-leaf) with `composer install` completed (only for integration tests)
+- A local checkout of [`leaf`](https://github.com/zephyrus-framework/leaf) with `composer install` completed (only for integration tests)
 
 ## Build
 

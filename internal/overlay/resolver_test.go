@@ -1,8 +1,10 @@
 package overlay
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -206,5 +208,185 @@ func TestMerge_NestedDirectories(t *testing.T) {
 	}
 	if got := readFile(t, filepath.Join(dst, "a", "b", "c", "d.txt")); got != "deep" {
 		t.Errorf("nested file wrong: %q", got)
+	}
+}
+
+const (
+	themeCatalogue   = `{"search": {"label": "Search", "placeholder": "Find"}, "tags": ["a", "b"], "n": 1.50, "html": "<b>&</b>", "only_theme": "T"}`
+	projectCatalogue = `{"search": {"label": "Mine"}, "tags": ["c"], "n": null, "custom": "x"}`
+)
+
+func writeTree(t *testing.T, root string, files map[string]string) {
+	t.Helper()
+	for rel, data := range files {
+		p := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(data), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func mapFSOf(files map[string]string) fstest.MapFS {
+	m := fstest.MapFS{}
+	for rel, data := range files {
+		m[rel] = &fstest.MapFile{Data: []byte(data)}
+	}
+	return m
+}
+
+// layerSources returns the same source tree backed by an fs.FS, a directory,
+// and a directory reached through a symlinked locale folder.
+func layerSources(t *testing.T, files map[string]string, mutate func(*Source)) map[string]Source {
+	t.Helper()
+	osRoot := t.TempDir()
+	writeTree(t, osRoot, files)
+
+	linkRoot := t.TempDir()
+	realLocale := t.TempDir()
+	for rel, data := range files {
+		if inner, ok := strings.CutPrefix(rel, "locale/"); ok {
+			writeTree(t, realLocale, map[string]string{inner: data})
+		} else {
+			writeTree(t, linkRoot, map[string]string{rel: data})
+		}
+	}
+	if err := os.Symlink(realLocale, filepath.Join(linkRoot, "locale")); err != nil {
+		t.Fatal(err)
+	}
+
+	srcs := map[string]Source{
+		"fs":      {Name: "s", FS: mapFSOf(files)},
+		"os":      {Name: "s", Root: osRoot},
+		"symlink": {Name: "s", Root: linkRoot},
+	}
+	for k, s := range srcs {
+		mutate(&s)
+		srcs[k] = s
+	}
+	return srcs
+}
+
+func decodeJSON(t *testing.T, path string) map[string]any {
+	t.Helper()
+	var out map[string]any
+	if err := json.Unmarshal([]byte(readFile(t, path)), &out); err != nil {
+		t.Fatalf("%s is not valid JSON: %v", path, err)
+	}
+	return out
+}
+
+func TestMerge_MergeJSONSourceWinsOnEveryPath(t *testing.T) {
+	files := map[string]string{"locale/en/general.json": projectCatalogue, "other/x.json": `{"a": 1}`}
+	for name, src := range layerSources(t, files, func(s *Source) { s.MergeJSON = []string{"locale"} }) {
+		t.Run(name, func(t *testing.T) {
+			dst := t.TempDir()
+			writeTree(t, dst, map[string]string{"locale/en/general.json": themeCatalogue, "other/x.json": `{"b": 2}`})
+			if err := Merge(dst, []Source{src}); err != nil {
+				t.Fatal(err)
+			}
+			got := decodeJSON(t, filepath.Join(dst, "locale/en/general.json"))
+			search := got["search"].(map[string]any)
+			if search["label"] != "Mine" || search["placeholder"] != "Find" {
+				t.Errorf("nested merge wrong: %v", search)
+			}
+			if got["custom"] != "x" || got["only_theme"] != "T" || got["html"] != "<b>&</b>" {
+				t.Errorf("keys lost: %v", got)
+			}
+			if tags := got["tags"].([]any); len(tags) != 1 || tags[0] != "c" {
+				t.Errorf("arrays must be taken whole: %v", got["tags"])
+			}
+			if v, present := got["n"]; !present || v != nil {
+				t.Errorf("null must win: %v", got["n"])
+			}
+			other := readFile(t, filepath.Join(dst, "other/x.json"))
+			if other != `{"a": 1}` {
+				t.Errorf("json outside the prefix must be replaced, got %q", other)
+			}
+		})
+	}
+}
+
+func TestMerge_MergeJSONWritesIndentedUnescapedNumberPreservingJSON(t *testing.T) {
+	dst := t.TempDir()
+	writeTree(t, dst, map[string]string{"locale/en/general.json": `{"n": 1.50, "html": "<b>&</b>"}`})
+	src := Source{Name: "s", FS: mapFSOf(map[string]string{"locale/en/general.json": `{"a": 1}`}), MergeJSON: []string{"locale"}}
+	if err := Merge(dst, []Source{src}); err != nil {
+		t.Fatal(err)
+	}
+	want := "{\n    \"a\": 1,\n    \"html\": \"<b>&</b>\",\n    \"n\": 1.50\n}\n"
+	if got := readFile(t, filepath.Join(dst, "locale/en/general.json")); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestMerge_MergeJSONUnderKeepExistingDstWins(t *testing.T) {
+	files := map[string]string{"locale/en/general.json": themeCatalogue}
+	for name, src := range layerSources(t, files, func(s *Source) {
+		s.MergeJSON = []string{"locale"}
+		s.KeepExisting = []string{"locale"}
+	}) {
+		t.Run(name, func(t *testing.T) {
+			dst := t.TempDir()
+			writeTree(t, dst, map[string]string{"locale/en/general.json": projectCatalogue})
+			if err := Merge(dst, []Source{src}); err != nil {
+				t.Fatal(err)
+			}
+			got := decodeJSON(t, filepath.Join(dst, "locale/en/general.json"))
+			search := got["search"].(map[string]any)
+			if search["label"] != "Mine" || search["placeholder"] != "Find" || got["only_theme"] != "T" || got["custom"] != "x" {
+				t.Errorf("merge wrong: %v", got)
+			}
+			if v, present := got["n"]; !present || v != nil {
+				t.Errorf("existing null must win: %v", got["n"])
+			}
+		})
+	}
+}
+
+func TestMerge_MergeJSONFallsBackToTheFileRuleWhenNotAnObject(t *testing.T) {
+	cases := map[string]struct{ existing, incoming string }{
+		"invalid existing": {`{broken`, `{"a": 1}`},
+		"invalid incoming": {`{"a": 1}`, `{broken`},
+		"array root":       {`{"a": 1}`, `["x"]`},
+		"trailing content": {`{"a": 1}`, `{"b": 2} {"c": 3}`},
+		"null root":        {`null`, `{"a": 1}`},
+	}
+	for name, c := range cases {
+		for _, keep := range []bool{false, true} {
+			sub := name + "/replace"
+			if keep {
+				sub = name + "/keep"
+			}
+			t.Run(sub, func(t *testing.T) {
+				dst := t.TempDir()
+				writeTree(t, dst, map[string]string{"locale/en/general.json": c.existing})
+				src := Source{Name: "s", FS: mapFSOf(map[string]string{"locale/en/general.json": c.incoming}), MergeJSON: []string{"locale"}}
+				want := c.incoming
+				if keep {
+					src.KeepExisting = []string{"locale"}
+					want = c.existing
+				}
+				if err := Merge(dst, []Source{src}); err != nil {
+					t.Fatal(err)
+				}
+				if got := readFile(t, filepath.Join(dst, "locale/en/general.json")); got != want {
+					t.Errorf("keep=%v: got %q, want %q", keep, got, want)
+				}
+			})
+		}
+	}
+}
+
+func TestMerge_MergeJSONSurfacesAnUnreadableExistingFile(t *testing.T) {
+	dst := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dst, "locale", "en", "general.json"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	src := Source{Name: "s", FS: mapFSOf(map[string]string{"locale/en/general.json": `{"a": 1}`}), MergeJSON: []string{"locale"}, KeepExisting: []string{"locale"}}
+	if err := Merge(dst, []Source{src}); err == nil {
+		t.Fatal("expected the unreadable destination to be reported")
 	}
 }

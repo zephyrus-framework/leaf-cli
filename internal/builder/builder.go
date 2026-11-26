@@ -50,7 +50,7 @@ func Build(ctx context.Context, opts Options) (int, error) {
 
 	if err := overlay.Merge(workdir, []overlay.Source{
 		{Name: "defaults", Priority: 0, FS: defaults.FS, Root: defaults.Root, Skip: []string{"content", "config.yml", "dist", "cache", ".git"}},
-		{Name: "user", Priority: 10, Root: opts.ProjectRoot, Skip: []string{"dist", "templates"}},
+		{Name: "user", Priority: 10, Root: opts.ProjectRoot, Skip: []string{"dist", "templates"}, MergeJSON: []string{"locale"}},
 	}); err != nil {
 		return 0, fmt.Errorf("merge project: %w", err)
 	}

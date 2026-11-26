@@ -89,7 +89,7 @@ Each `leaf build` runs:
 
 `leaf dev` runs the same pipeline on every file change (250 ms debounced) and pushes Server-Sent Events to open browser tabs to auto-reload.
 
-Overlay precedence: user files win over bundled defaults. `content/` and `config.yml` are user-exclusive (defaults don't leak through). `templates/`, `public/`, `locale/` are file-level overrides.
+Overlay precedence: user files win over bundled defaults. `content/` and `config.yml` are user-exclusive (defaults don't leak through). `templates/` and `public/` are file-level overrides; `locale/*.json` catalogues are merged key by key, the project's keys winning.
 
 ## Status
 

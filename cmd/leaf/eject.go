@@ -11,7 +11,7 @@ import (
 )
 
 // Paths where the template only fills gaps and never replaces a user file.
-var ejectKeep = []string{"public"}
+var ejectKeep = []string{"public", "locale"}
 
 // Paths that eject never copies: user-owned files that must survive.
 var ejectSkip = []string{
@@ -61,7 +61,7 @@ func runEject(args []string) int {
 	}
 
 	if err := overlay.Merge(root, []overlay.Source{
-		{Name: "framework", Root: defaults.Root, FS: defaults.FS, Skip: ejectSkip, KeepExisting: ejectKeep},
+		{Name: "framework", Root: defaults.Root, FS: defaults.FS, Skip: ejectSkip, KeepExisting: ejectKeep, MergeJSON: []string{"locale"}},
 	}); err != nil {
 		fmt.Fprintf(os.Stderr, "leaf eject: %v\n", err)
 		return 1
